@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Curseur de Ramsey</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: phone-first — the result rides in a sticky bar at the top while the thumb works the sliders below; on wide screens it becomes a side panel for projection */
+:root{
+  --bg:#eef1f4;
+  --panel:#ffffff;
+  --ink:#14202b;
+  --muted:#5b6b78;
+  --line:#d3dbe2;
+  --heat:#c2410c;
+  --stern:#1d6f8a;
+  --nord:#8a6d1d;
+  --ok:#2f7d4f;
+  --chip:#e3e9ee;
+  --f-display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body:"Public Sans", "Segoe UI", system-ui, sans-serif;
+  --f-num:"JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f161c; --panel:#17212a; --ink:#e7edf2; --muted:#93a4b2; --line:#2a3946;
+    --heat:#f07a3f; --stern:#5bb3cf; --nord:#d1b062; --ok:#5cc489; --chip:#22303b; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f161c; --panel:#17212a; --ink:#e7edf2; --muted:#93a4b2; --line:#2a3946;
+  --heat:#f07a3f; --stern:#5bb3cf; --nord:#d1b062; --ok:#5cc489; --chip:#22303b; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:16px;padding-block:20px 40px;display:grid;gap:18px}
+header{display:grid;gap:6px}
+.eyebrow{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600}
+h1{font-family:var(--f-display);font-weight:800;font-size:clamp(26px,4.2vw,44px);line-height:1.05;margin:0;text-wrap:balance}
+.lede{color:var(--muted);max-width:68ch;margin:0}
+.formula{font-family:var(--f-num);font-size:clamp(17px,2.2vw,22px);font-weight:700;margin:0}
+.formula b{color:var(--heat)}
+h2{font-family:var(--f-display);font-weight:700;font-size:19px;margin:0;text-wrap:balance}
+
+.grid{display:grid;grid-template-columns:minmax(0,1fr);gap:18px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px;display:grid;gap:16px;min-width:0}
+
+/* sticky result */
+.result{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;gap:8px;padding:14px 16px;box-shadow:0 6px 18px -12px rgba(0,0,0,.35)}
+.res-top{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.big{font-family:var(--f-display);font-weight:800;font-size:clamp(48px,13vw,120px);line-height:.9;color:var(--heat);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.big small{font-size:.4em;font-weight:700;color:var(--ink);letter-spacing:0}
+.rate-pill{font-family:var(--f-num);font-weight:700;font-size:15px;background:var(--chip);border-radius:999px;padding:6px 12px;white-space:nowrap}
+.sentence{font-size:clamp(14px,1.8vw,19px);margin:0;max-width:46ch}
+.sentence strong{font-family:var(--f-num)}
+.verdict{font-size:13px;color:var(--muted);margin:0}
+.verdict b{color:var(--ink)}
+.bars{display:grid;gap:8px}
+.bar{display:grid;grid-template-columns:minmax(0,96px) minmax(0,1fr) 64px;gap:10px;align-items:center;font-size:13px}
+.bar .track{height:12px;background:var(--chip);border-radius:3px;overflow:hidden}
+.bar .fill{height:100%;border-radius:3px;transition:width .35s ease}
+.bar .v{font-family:var(--f-num);font-weight:700;text-align:right;font-variant-numeric:tabular-nums}
+
+/* controls */
+.presets{display:flex;flex-wrap:wrap;gap:8px}
+.presets button{font:600 14px var(--f-body);border:1px solid var(--line);background:var(--chip);color:var(--ink);border-radius:999px;padding:10px 14px;min-height:44px;cursor:pointer}
+.presets button:hover{border-color:var(--ink)}
+.presets button[aria-pressed="true"]{background:var(--ink);color:var(--panel);border-color:var(--ink)}
+button:focus-visible,input[type=range]:focus-visible{outline:2px solid var(--heat);outline-offset:3px}
+.ctl{display:grid;gap:4px}
+.ctl-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.ctl-head label{font-weight:600}
+.ctl-head output{font-family:var(--f-num);font-weight:700;font-size:18px;font-variant-numeric:tabular-nums}
+.ctl p{margin:0;font-size:13px;color:var(--muted)}
+input[type=range]{width:100%;height:36px;accent-color:var(--heat);margin:0}
+
+/* challenges */
+.defis{display:grid;gap:10px;margin:0;padding:0;list-style:none}
+.defi{display:grid;grid-template-columns:28px minmax(0,1fr);gap:10px;align-items:start;padding:12px;border:1px solid var(--line);border-radius:8px}
+.defi .mark{width:28px;height:28px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;font-weight:700;font-size:14px;color:var(--muted);font-family:var(--f-num)}
+.defi.done{border-color:var(--ok)}
+.defi.done .mark{background:var(--ok);border-color:var(--ok);color:var(--panel)}
+.defi p{margin:0}
+.defi .hint{font-size:13px;color:var(--muted);margin-top:4px}
+.defi.done .hint{color:var(--ink)}
+
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--muted)}
+.legend i{display:inline-block;width:18px;height:3px;border-radius:2px;vertical-align:middle;margin-right:6px}
+svg{display:block;width:100%;height:auto}
+.note{font-size:13px;color:var(--muted);margin:0;max-width:90ch}
+
+@media (min-width:880px){
+  .grid{grid-template-columns:minmax(0,380px) minmax(0,1fr);grid-template-areas:"ctl res" "defis res";align-items:start}
+  .result{grid-area:res;top:16px;padding:22px;gap:14px}
+  .controls{grid-area:ctl}
+  .defis-panel{grid-area:defis}
+  .big{font-size:clamp(72px,10vw,132px)}
+}
+@media (max-width:879px){
+  .result .bars{display:none}
+}
+@media (prefers-reduced-motion:reduce){.bar .fill{transition:none}}
+</style>
+</head><body>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">COP31 · Jeunesse &amp; éducation · Qui paie ?</div>
+    <h1>Combien vaut l'avenir d'un enfant né en 2026&nbsp;?</h1>
+    <p class="formula">r = <b>δ</b> + η × g</p>
+    <p class="lede">Vous êtes ministre. Réglez les trois paramètres : le chiffre en haut montre ce que pèsent aujourd'hui 1&nbsp;000&nbsp;€ de dommages climatiques subis par cet enfant.</p>
+  </header>
+
+  <div class="grid">
+    <section class="panel result" aria-live="polite" aria-label="Résultat">
+      <div class="res-top">
+        <div class="big"><span id="pv">161</span><small> €</small></div>
+        <span class="rate-pill">r = <span id="r">2,5 %</span></span>
+      </div>
+      <p class="sentence" id="sent"></p>
+      <p class="verdict" id="verdict"></p>
+      <div class="bars" id="bars"></div>
+    </section>
+
+    <section class="panel controls" aria-label="Paramètres">
+      <div class="presets" role="group" aria-label="Préréglages">
+        <button type="button" id="p-stern" data-d="0.1" data-e="1" data-g="1.3">Stern 2006</button>
+        <button type="button" id="p-nord" data-d="1.5" data-e="1.5" data-g="2">Nordhaus</button>
+        <button type="button" id="p-zero" data-d="0" data-e="1" data-g="1.3">δ = 0</button>
+      </div>
+
+      <div class="ctl">
+        <div class="ctl-head"><label for="d">δ · préférence pour le présent</label><output id="od" for="d"></output></div>
+        <input type="range" id="d" min="0" max="3" step="0.1" value="1">
+        <p>Un choix moral : compter moins quelqu'un parce qu'il naît plus tard.</p>
+      </div>
+      <div class="ctl">
+        <div class="ctl-head"><label for="e">η · aversion aux inégalités</label><output id="oe" for="e"></output></div>
+        <input type="range" id="e" min="0.5" max="3" step="0.1" value="1">
+        <p>Plus η est grand, moins un euro compte pour une génération plus riche.</p>
+      </div>
+      <div class="ctl">
+        <div class="ctl-head"><label for="g">g · croissance par habitant</label><output id="og" for="g"></output></div>
+        <input type="range" id="g" min="0" max="3" step="0.1" value="1.5">
+        <p>Un pari sur l'avenir : nos descendants seront-ils vraiment plus riches&nbsp;?</p>
+      </div>
+      <div class="ctl">
+        <div class="ctl-head"><label for="y">Année du dommage</label><output id="oy" for="y"></output></div>
+        <input type="range" id="y" min="2030" max="2126" step="1" value="2100">
+        <p id="age"></p>
+      </div>
+    </section>
+
+    <section class="panel defis-panel" aria-label="Défis">
+      <h2>Trois défis</h2>
+      <ol class="defis">
+        <li class="defi" id="c1"><span class="mark">1</span><div><p>Faites tomber 1&nbsp;000&nbsp;€ de dommages en 2100 sous <b>50&nbsp;€</b>.</p><p class="hint" data-done="Réussi : il suffit d'un taux d'environ 4 %, proche de ce qu'utilise Nordhaus.">Quel taux faut-il&nbsp;?</p></div></li>
+        <li class="defi" id="c2"><span class="mark">2</span><div><p>Avec <b>δ = 0</b>, descendez quand même sous <b>100&nbsp;€</b>.</p><p class="hint" data-done="Réussi : même sans mépris du futur, une forte croissance attendue suffit à écraser l'avenir. Tout repose sur le pari g.">Jouez sur η et g.</p></div></li>
+        <li class="defi" id="c3"><span class="mark">3</span><div><p>Le climat casse la croissance : <b>g = 0</b> et <b>δ = 0</b>. Que vaut l'avenir&nbsp;?</p><p class="hint" data-done="Réussi : 1 000 € valent 1 000 €. Si nos enfants ne sont pas plus riches que nous, rien ne justifie d'actualiser leurs dommages.">Réglez les deux curseurs à zéro.</p></div></li>
+      </ol>
+    </section>
+  </div>
+
+  <section class="panel">
+    <h2>Valeur aujourd'hui de 1&nbsp;000&nbsp;€ de dommages, selon l'année</h2>
+    <div class="legend">
+      <span><i style="background:var(--heat)"></i>Vos réglages</span>
+      <span><i style="background:var(--stern)"></i>Stern (≈ 1,4 %)</span>
+      <span><i style="background:var(--nord)"></i>Nordhaus (≈ 4,5 %)</span>
+    </div>
+    <div id="chartbox"><svg id="chart" role="img" aria-label="Courbes de valeur actualisée selon l'année"></svg></div>
+    <p class="note">Calcul : valeur présente = 1&nbsp;000&nbsp;€ / (1 + r)<sup>année − 2026</sup>, avec r = δ + η × g (règle de Ramsey, 1928). Paramètres Stern (δ = 0,1 %, η = 1, g = 1,3 %) et Nordhaus (δ = 1,5 %, η = 1,5, g = 2 %) arrondis à des fins pédagogiques. Weitzman (2001) et Gollier (2012) justifient des taux décroissants avec l'horizon quand la croissance future est incertaine.</p>
+  </section>
+</div>
+
+<script>
+(function(){
+  var BASE = 2026, DMG = 1000;
+  var $ = function(id){return document.getElementById(id)};
+  var d=$('d'), e=$('e'), g=$('g'), y=$('y');
+  var fmt = new Intl.NumberFormat('fr-FR',{maximumFractionDigits:0});
+  var fmt1 = new Intl.NumberFormat('fr-FR',{minimumFractionDigits:1,maximumFractionDigits:2});
+  var STERN = {d:0.1,e:1,g:1.3}, NORD = {d:1.5,e:1.5,g:2};
+  function rate(p){return (p.d + p.e*p.g)/100}
+  function pv(r,year){return DMG/Math.pow(1+r,year-BASE)}
+  function cur(){return {d:+d.value,e:+e.value,g:+g.value}}
+
+  function bars(year, rv){
+    var rows=[['Vous',rv,'var(--heat)'],['Stern',rate(STERN),'var(--stern)'],['Nordhaus',rate(NORD),'var(--nord)']];
+    $('bars').innerHTML = rows.map(function(x){
+      var v=pv(x[1],year);
+      return '<div class="bar"><span>'+x[0]+'</span><div class="track"><div class="fill" style="width:'+Math.min(100,v/DMG*100).toFixed(1)+'%;background:'+x[2]+'"></div></div><span class="v">'+fmt.format(v)+' €</span></div>';
+    }).join('');
+  }
+
+  function chart(rv, year){
+    var box=$('chartbox'), wpx=Math.max(300, Math.min(1100, box.clientWidth||600));
+    var narrow = wpx<560;
+    var W=wpx, H=narrow?260:330, L=narrow?42:56, R=narrow?12:20, T=18, B=narrow?40:44, x0=BASE, x1=2126;
+    var fs=narrow?11:12;
+    var X=function(t){return L+(t-x0)/(x1-x0)*(W-L-R)};
+    var Y=function(v){return T+(1-v/DMG)*(H-T-B)};
+    var s='';
+    [0,250,500,750,1000].forEach(function(v){
+      s+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+Y(v)+'" y2="'+Y(v)+'" stroke="var(--line)" stroke-width="1"/>';
+      s+='<text x="'+(L-6)+'" y="'+(Y(v)+4)+'" text-anchor="end" font-size="'+fs+'" fill="var(--muted)" font-family="JetBrains Mono, monospace">'+fmt.format(v)+'</text>';
+    });
+    var ticks = narrow ? [2026,2060,2100,2126] : [2026,2050,2075,2100,2126];
+    ticks.forEach(function(t,i){
+      var anchor = i===0?'start':(i===ticks.length-1?'end':'middle');
+      s+='<text x="'+X(t)+'" y="'+(H-B+16)+'" text-anchor="'+anchor+'" font-size="'+fs+'" fill="var(--muted)" font-family="JetBrains Mono, monospace">'+t+'</text>';
+      s+='<text x="'+X(t)+'" y="'+(H-B+31)+'" text-anchor="'+anchor+'" font-size="'+(fs-1)+'" fill="var(--muted)">'+(t-BASE)+' ans</text>';
+    });
+    function path(r){var p='';for(var t=x0;t<=x1;t++){p+=(t===x0?'M':'L')+X(t).toFixed(1)+','+Y(pv(r,t)).toFixed(1)}return p}
+    s+='<path d="'+path(rate(STERN))+'" fill="none" stroke="var(--stern)" stroke-width="2.5"/>';
+    s+='<path d="'+path(rate(NORD))+'" fill="none" stroke="var(--nord)" stroke-width="2.5"/>';
+    s+='<path d="'+path(rv)+'" fill="none" stroke="var(--heat)" stroke-width="4"/>';
+    var vx=X(year), vy=Y(pv(rv,year));
+    s+='<line x1="'+vx+'" x2="'+vx+'" y1="'+T+'" y2="'+(H-B)+'" stroke="var(--ink)" stroke-dasharray="4 4" stroke-width="1"/>';
+    s+='<circle cx="'+vx+'" cy="'+vy+'" r="6" fill="var(--heat)" stroke="var(--panel)" stroke-width="2"/>';
+    var right = vx > W*0.7, lx = right ? vx-10 : vx+10;
+    s+='<text x="'+lx+'" y="'+Math.max(vy-10,T+12)+'" text-anchor="'+(right?'end':'start')+'" font-size="'+(fs+2)+'" font-weight="700" fill="var(--ink)" font-family="JetBrains Mono, monospace">'+fmt.format(pv(rv,year))+' €</text>';
+    var svg=$('chart'); svg.setAttribute('viewBox','0 0 '+W+' '+H); svg.innerHTML=s;
+  }
+
+  function verdict(rv){
+    var r=rv*100;
+    if (r<=2) return 'Vous êtes du côté de <b>Stern</b> : l’avenir des jeunes compte presque autant que le présent.';
+    if (r>=4) return 'Vous êtes du côté de <b>Nordhaus</b> : l’avenir pèse peu dans le calcul d’aujourd’hui.';
+    return 'Vous êtes <b>entre Stern et Nordhaus</b>.';
+  }
+
+  function challenges(p, rv){
+    var c=[pv(rv,2100)<50, p.d===0 && pv(rv,2100)<100, p.d===0 && p.g===0];
+    c.forEach(function(ok,i){
+      var li=$('c'+(i+1)), hint=li.querySelector('.hint');
+      if(!hint.dataset.todo) hint.dataset.todo=hint.textContent;
+      li.classList.toggle('done',ok);
+      li.querySelector('.mark').textContent = ok ? '✓' : String(i+1);
+      hint.textContent = ok ? hint.dataset.done : hint.dataset.todo;
+    });
+  }
+
+  function render(){
+    var p=cur(), rv=rate(p), year=+y.value, v=pv(rv,year);
+    $('od').textContent=fmt1.format(p.d)+' %';
+    $('oe').textContent=fmt1.format(p.e);
+    $('og').textContent=fmt1.format(p.g)+' %';
+    $('oy').textContent=year;
+    $('age').textContent='Un enfant né en 2026 aura '+(year-BASE)+' ans.';
+    $('pv').textContent=fmt.format(v);
+    $('r').textContent=fmt1.format(rv*100)+' %';
+    $('sent').innerHTML='1 000 € de dommages en <strong>'+year+'</strong> valent <strong>'+fmt.format(v)+' €</strong> aujourd’hui.';
+    $('verdict').innerHTML=verdict(rv);
+    bars(year,rv); chart(rv,year); challenges(p,rv);
+    document.querySelectorAll('.presets button').forEach(function(b){
+      var on=Math.abs(+b.dataset.d-p.d)<1e-9 && Math.abs(+b.dataset.e-p.e)<1e-9 && Math.abs(+b.dataset.g-p.g)<1e-9;
+      b.setAttribute('aria-pressed',on?'true':'false');
+    });
+  }
+  document.querySelectorAll('.presets button').forEach(function(b){
+    b.addEventListener('click',function(){d.value=b.dataset.d;e.value=b.dataset.e;g.value=b.dataset.g;render()});
+  });
+  [d,e,g,y].forEach(function(i){i.addEventListener('input',render)});
+  var rt; window.addEventListener('resize',function(){clearTimeout(rt);rt=setTimeout(render,120)});
+  render();
+})();
+</script>
+
+</body></html>
